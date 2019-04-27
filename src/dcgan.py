@@ -1,6 +1,6 @@
 from __future__ import print_function, division
 
-from keras.datasets import mnist
+# from keras.datasets import mnist
 from keras.layers import Input, Dense, Reshape, Flatten, Dropout
 from keras.layers import BatchNormalization, Activation, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
@@ -9,19 +9,21 @@ from keras.models import Sequential, Model
 from keras.optimizers import Adam
 
 import matplotlib.pyplot as plt
-
+import datetime
 import sys
 
 import numpy as np
 
 class DCGAN():
-    def __init__(self):
+
+    def __init__(self, rows, cols, channels, data):
         # Input shape
-        self.img_rows = 28
-        self.img_cols = 28
-        self.channels = 1
+        self.img_rows = rows
+        self.img_cols = cols
+        self.channels = channels
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         self.latent_dim = 100
+        self.data = data # np array loaded 
 
         optimizer = Adam(0.0002, 0.5)
 
@@ -53,10 +55,12 @@ class DCGAN():
 
         model = Sequential()
 
-        model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
-        model.add(Reshape((7, 7, 128)))
+        input_size = 128
+
+        model.add(Dense(input_size * 8 * 8, activation="relu", input_dim=self.latent_dim))
+        model.add(Reshape((8, 8, input_size)))
         model.add(UpSampling2D())
-        model.add(Conv2D(128, kernel_size=3, padding="same"))
+        model.add(Conv2D(input_size, kernel_size=3, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
         model.add(Activation("relu"))
         model.add(UpSampling2D())
@@ -77,9 +81,11 @@ class DCGAN():
 
         model = Sequential()
 
+        ## reduccion del tamano con strides=2
         model.add(Conv2D(32, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
+        ## Recordar padding='same'
         model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
         model.add(ZeroPadding2D(padding=((0,1),(0,1))))
         model.add(BatchNormalization(momentum=0.8))
@@ -106,7 +112,8 @@ class DCGAN():
     def train(self, epochs, batch_size=128, save_interval=50):
 
         # Load the dataset
-        (X_train, _), (_, _) = mnist.load_data()
+        # (X_train, _), (_, _) = mnist.load_data()
+        X_train = self.data
 
         # Rescale -1 to 1
         X_train = X_train / 127.5 - 1.
@@ -164,7 +171,10 @@ class DCGAN():
                 axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
                 axs[i,j].axis('off')
                 cnt += 1
-        fig.savefig("images/mnist_%d.png" % epoch)
+        # fig.savefig("images/mnist_%d.png" % epoch)
+        timestamp = datetime.datetime.now()
+        fig.savefig("images/{0}.png".format(str(timestamp)))
+        print('Image has been saved')
         plt.close()
 
 
