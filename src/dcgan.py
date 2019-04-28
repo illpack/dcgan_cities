@@ -15,6 +15,9 @@ import logging
 import numpy as np
 import scipy.misc # export images
 
+## Custom classes
+from discriminator import Discriminator
+from generator import Generator
 
 class DCGAN():
     
@@ -24,20 +27,24 @@ class DCGAN():
         self.img_cols = cols
         self.channels = channels
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
+        ## Encoded dimensions (Autoencoder)
         self.latent_dim = 100
-        self.data = data # np array loaded 
+        ## Loaded data 
+        self.data = data 
         self.input_size = input_size 
         self.setupLogs()
         optimizer = Adam(0.0002, 0.5)
 
         # Build and compile the discriminator
-        self.discriminator = self.build_discriminator()
+        dc = Discriminator(self.img_shape)
+        self.discriminator = dc.build_discriminator(input_size=32)
         self.discriminator.compile(loss='binary_crossentropy',
             optimizer=optimizer,
             metrics=['accuracy'])
 
         # Build the generator
-        self.generator = self.build_generator()
+        gn = Generator(self.img_shape, self.input_size, self.latent_dim, self.channels)
+        self.generator = gn.build_generator()
 
         # The generator takes noise as input and generates imgs
         z = Input(shape=(self.latent_dim,))
@@ -54,96 +61,6 @@ class DCGAN():
         self.combined = Model(z, valid)
         self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
 
-    def build_generator(self):
-    
-        model = Sequential()
-
-        model.add(Dense(self.input_size * 8 * 8, activation="relu", input_dim=self.latent_dim))
-        model.add(Reshape((8, 8, self.input_size)))
-        model.add(UpSampling2D())
-
-        model.add(Conv2D(self.input_size, kernel_size=3, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(Activation("relu"))
-        model.add(UpSampling2D())
-
-        model.add(Conv2D(self.input_size, kernel_size=3, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(Activation("relu"))
-        model.add(UpSampling2D())
-
-        model.add(Conv2D(self.input_size, kernel_size=3, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(Activation("relu"))
-        model.add(UpSampling2D())
-
-        model.add(Conv2D(self.input_size, kernel_size=3, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(Activation("relu"))
-        model.add(UpSampling2D())
-        ## Added to get the right output
-        model.add(Conv2D(self.channels, kernel_size=3, padding="same"))
-        model.add(Activation("tanh"))
-
-        print('\nGENERATOR SUMMARY:')
-        model.summary()
-
-        noise = Input(shape=(self.latent_dim,))
-        img = model(noise)
-
-        return Model(noise, img)
-
-    def build_discriminator(self):
-
-        model = Sequential()
-        print('Image shape:', self.img_shape)
-        ## reduccion del tamano con strides=2
-        model.add(Conv2D(32, kernel_size=3, strides=1, input_shape=self.img_shape, padding="same"))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
-
-        ## Recordar padding='same'
-        model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
-        # model.add(ZeroPadding2D(padding=((0,1),(0,1))))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
-
-        model.add(Conv2D(128, kernel_size=3, strides=2, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
-
-        model.add(Conv2D(256, kernel_size=3, strides=1, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
-
-        model.add(Conv2D(256, kernel_size=3, strides=1, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
-
-        model.add(Conv2D(256, kernel_size=3, strides=1, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
-
-        model.add(Conv2D(256, kernel_size=3, strides=1, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
-
-        model.add(Flatten())
-        model.add(Dense(1, activation='sigmoid'))
-
-        print('\nDISCRIMINATOR SUMMARY:')
-        model.summary()
-
-        img = Input(shape=self.img_shape)
-        validity = model(img)
-
-        return Model(img, validity)
 
     def train(self, epochs, batch_size=128, save_interval=50):
     
