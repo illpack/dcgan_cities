@@ -18,7 +18,8 @@ class ImageLoader():
             assert os.path.isdir(self.folder)
             print('Loading images...')
             files = list(filter(lambda x: x.endswith(extension), os.listdir(self.folder)))
-            len_data = len(os.listdir(self.folder))
+            if not datalen:
+                datalen = len(os.listdir(self.folder))
             for idx, img in enumerate(files):
                 image_path = os.path.join(self.folder, img)
                 im = Image.open(image_path)
@@ -26,9 +27,11 @@ class ImageLoader():
                 if image_path.endswith(extension):
                     self.X.append(np.array(im))
                     if (idx % 50 == 0): 
-                        print(round(100*idx/len_data, 3))
+                        print(round(100*idx/datalen, 1), sep='...')
                     if (datalen and idx>datalen):
+                        print(np.array(self.X).shape)
                         return self.X
+            print(np.array(self.X).shape)
             return self.X
         
         except AssertionError:
