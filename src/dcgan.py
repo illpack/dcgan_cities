@@ -10,7 +10,7 @@ from keras.optimizers import Adam
 
 import matplotlib.pyplot as plt
 import datetime, time
-import sys
+import os, sys, inspect
 import logging
 import numpy as np
 import scipy.misc # export images
@@ -22,6 +22,7 @@ from generator import Generator
 class DCGAN():
     
     def __init__(self, rows, cols, channels, data, input_size=128):
+        self.outputdir = self.getOutput()
         # Input shape
         self.img_rows = rows
         self.img_cols = cols
@@ -31,9 +32,11 @@ class DCGAN():
         self.latent_dim = 100
         ## Loaded data 
         self.data = data 
+        ## What is input size?
         self.input_size = input_size 
-        self.setupLogs()
+        ## Define optimizer
         optimizer = Adam(0.0002, 0.5)
+        self.setupLogs()
 
         # Build and compile the discriminator
         dc = Discriminator(self.img_shape)
@@ -61,6 +64,13 @@ class DCGAN():
         self.combined = Model(z, valid)
         self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
 
+    def getOutput(self):
+        dir_current = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        outputdir = os.path.join(dir_current, 'output')
+        process = os.path.join(outputdir, 'process')
+        if not os.path.exists(outputdir): os.makedirs(outputdir)
+        if not os.path.exists(process): os.makedirs(process)
+        return outputdir
 
     def train(self, epochs, batch_size=128, save_interval=50):
     
@@ -120,22 +130,30 @@ class DCGAN():
         # Rescale images 0 - 1
         gen_imgs = 0.5 * gen_imgs + 0.5
 
-        fig, axs = plt.subplots(r, c)
-        cnt = 0
-        for i in range(r):
-            for j in range(c):
-                axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
-                axs[i,j].axis('off')
-                cnt += 1
-        # fig.savefig("images/mnist_%d.png" % epoch)
-        timestamp = str(time.time()).split('.')[0]
-        fig.savefig("output/gen__{0}_epoch_{1}.png".format(timestamp, str(epoch)))
-        print('Image has been saved')
-        plt.close()
+        try:
+            fig, axs = plt.subplots(r, c)
+            cnt = 0
+            for i in range(r):
+                for j in range(c):
+                    axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
+                    axs[i,j].axis('off')
+                    cnt += 1
+            # fig.savefig("images/mnist_%d.png" % epoch)
+            timestamp = str(time.time()).split('.')[0]
+            fig.savefig(os.path.join(self.outputdir, 'gen__{0}_epoch_{1}.png'.format(timestamp, str(epoch))))
+            print('Image has been saved')
+            plt.close()
+        except Exception as e:
+            print('Save image failed:' + str(e))
+            pass
 
     def saveImg(self, img, name=''):
         timestamp = str(time.time()).split('.')[0]
-        scipy.misc.toimage(img).save('output/process/{0}_{1}.jpg'.format(timestamp, name))
+        try:
+            path = os.path.join(self.outputdir, 'process', '{0}_{1}.jpg'.format(timestamp, name))
+            scipy.misc.toimage(img).save(path)
+        except Exception as e:
+            print('Save progress image failed:' + str(e))
 
     def setupLogs(self):
         fmtstr = "%(asctime)s: %(levelname)s: %(funcName)s: Line:%(lineno)d %(message)s"

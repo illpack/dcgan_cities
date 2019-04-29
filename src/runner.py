@@ -1,6 +1,3 @@
-import pandas as pd, numpy as np
-import matplotlib.pyplot as plt
-import geopandas as gpd
 import os, sys, argparse
 from image_loader import ImageLoader
 from dcgan import DCGAN

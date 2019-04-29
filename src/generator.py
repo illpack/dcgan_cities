@@ -19,12 +19,13 @@ class Generator:
         print('Generator Image shape:', self.img_shape)
     
     
-    def build_generator(self, momentum=0.8):
+    def build_generator(self, momentum=0.8, dropout=0.3):
     
         ##Dropout of between 0.3 and 0.5 at the first layer prevents overfitting.
     
         model = Sequential()
 
+        ## First layer's dimension will be same size as encoded dims, ie. latent_dim
         model.add(Dense(self.input_size * 8 * 8, activation="relu", input_dim=self.latent_dim))
         model.add(Reshape((8, 8, self.input_size)))
         model.add(UpSampling2D())
@@ -33,6 +34,7 @@ class Generator:
         model.add(BatchNormalization(momentum=momentum))
         model.add(Activation("relu"))
         model.add(UpSampling2D())
+        model.add(Dropout(dropout))
         ## TODO: Dropout?
 
         model.add(Conv2D(self.input_size, kernel_size=3, padding="same"))
@@ -49,7 +51,7 @@ class Generator:
         model.add(BatchNormalization(momentum=momentum))
         model.add(Activation("relu"))
         model.add(UpSampling2D())
-        ## Added to get the right output
+        ## Add a last convolutional 2D layer to go from 128 to 3 channels - the right output
         model.add(Conv2D(self.channels, kernel_size=3, padding="same"))
         model.add(Activation("tanh"))
 
