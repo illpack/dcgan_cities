@@ -10,6 +10,15 @@ This project aims to address Urban Networks Design as a [wicked problem](https:/
 
 The project can be divided in three sections: __Scrapping__, __Feature extraction__, __Generation__.
 
+_Cluster 01_
+![cl01](assets/cl01.png)
+
+_Cluster 02_
+![cl02](assets/cl02.png)
+
+_Cluster 03_
+![cl03](assets/cl03.png)
+
 ### Scraping
 
 We have used urban street networks as a proof of concept. To this end, we have generated a 6,6K+ images dataset from Open Street Maps, taking background-figure snapshots of urban networks.  
@@ -30,6 +39,5 @@ We have used Deep Convolutional Generative Adversarial Networks to generate arti
 
 *   [__Strided Convolution__](https://www.coursera.org/lecture/convolutional-neural-networks/strided-convolutions-wfUhx)
     This means convolving a `NxN` matrix with a `fxf` filter applying a padding of `p` and a stride of `s`. The stride equals the number of steps that the filter will jump per iteration. So a stride of 2 would reduce the input to `0.5*Nx0.5*N`. Generally: `output = (N + 2*p - f) / s + 1`
-
 
 *   [__Max-pooling__](https://www.quora.com/What-is-max-pooling-in-convolutional-neural-networks)
